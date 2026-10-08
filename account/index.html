@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compte — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="active" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Compte utilisateur</h1>
+<p>Préfixe : <code>/api/account</code> — <strong>JWT requis</strong>.</p>
+<h2>Vue d’ensemble</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/account</code></td>
+<td>Profil enrichi</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/account/profile</code></td>
+<td>MAJ username / email</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/account/password</code></td>
+<td>Changer le mot de passe</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/account/avatar</code></td>
+<td>Upload avatar (multipart)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/account/avatar</code></td>
+<td>Supprimer l’avatar</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/account/orders</code></td>
+<td>Historique commandes</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/account/orders/export.pdf</code></td>
+<td>Export PDF des commandes</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/account/downloads</code></td>
+<td>Jeux téléchargeables (achetés / gratuits)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/account/favorites</code></td>
+<td>Liste favoris</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/account/favorites</code></td>
+<td>Ajouter un favori</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/account/favorites/{gameId}</code></td>
+<td>Retirer un favori</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/account/favorites/{gameId}/status</code></td>
+<td>Est-ce un favori ?</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/account</code></td>
+<td>Supprimer le compte</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>GET /api/account</h2>
+<p>Profil courant (plus riche que <code>/api/me</code> selon implémentation) : identité, rôles, avatar, statut, etc.</p>
+<p>---</p>
+<h2>PATCH /api/account/profile</h2>
+<pre><code>{
+  &quot;username&quot;: &quot;nouveau_pseudo&quot;,
+  &quot;email&quot;: &quot;nouveau@email.com&quot;
+}</code></pre>
+<p>Champs optionnels. Validations : username 3–180, email unique, etc.</p>
+<div class="alert info">L’avatar se gère via <code>POST/DELETE /api/account/avatar</code> (fichier), pas via une URL dans ce body.</div>
+<p>---</p>
+<h2>POST /api/account/password</h2>
+<pre><code>{
+  &quot;current_password&quot;: &quot;...&quot;,
+  &quot;new_password&quot;: &quot;...&quot;
+}</code></pre>
+<p>---</p>
+<h2>Avatar</h2>
+<h3>POST /api/account/avatar</h3>
+<p><code>multipart/form-data</code> avec un fichier image (champ selon implémentation, typiquement <code>avatar</code> ou <code>file</code>).</p>
+<h3>DELETE /api/account/avatar</h3>
+<p>Supprime l’avatar courant.</p>
+<p>---</p>
+<h2>GET /api/account/orders</h2>
+<p>Liste des commandes de l’utilisateur (items, montants, statuts paiement).</p>
+<h2>GET /api/account/orders/export.pdf</h2>
+<p>Téléchargement PDF de l’historique.</p>
+<h2>GET /api/account/downloads</h2>
+<p>Jeux que l’utilisateur peut télécharger (après achat payé ou jeu gratuit).</p>
+<p>---</p>
+<h2>Favoris</h2>
+<h3>POST /api/account/favorites</h3>
+<pre><code>{
+  &quot;game_id&quot;: 5
+}</code></pre>
+<h3>GET /api/account/favorites/{gameId}/status</h3>
+<pre><code>{
+  &quot;favorited&quot;: true
+}</code></pre>
+<h3>DELETE /api/account/favorites/{gameId}</h3>
+<p>204 ou 200 selon implémentation.</p>
+<p>---</p>
+<h2>DELETE /api/account</h2>
+<p>Suppression du compte utilisateur connecté (irréversible selon règles métier côté serveur).</p>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

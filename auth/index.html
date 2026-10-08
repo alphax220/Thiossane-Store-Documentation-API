@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authentification — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="active" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Authentification</h1>
+<p>Préfixe principal : <code>/api</code> — pas de JWT pour register/login ; JWT requis pour <code>/api/me</code> et logout.</p>
+<h2>Vue d’ensemble</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/register</code></td>
+<td>Public</td>
+<td>Inscription utilisateur</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/register/developer</code></td>
+<td>Public</td>
+<td>Inscription développeur (+ profil studio)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/login</code></td>
+<td>Public</td>
+<td>Connexion → JWT + refresh</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/logout</code></td>
+<td>JWT</td>
+<td>Déconnexion (invalide refresh)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/me</code></td>
+<td>JWT</td>
+<td>Utilisateur courant</td>
+</tr>
+<tr>
+<td>POST / GET</td>
+<td><code>/api/token/refresh</code></td>
+<td>Cookie ou body</td>
+<td>Nouveau access token</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>POST /api/register</h2>
+<p>Créer un compte joueur.</p>
+<p><strong>Body :</strong></p>
+<pre><code>{
+  &quot;email&quot;: &quot;joueur@example.com&quot;,
+  &quot;password&quot;: &quot;MotDePasseSecurise1&quot;,
+  &quot;username&quot;: &quot;pseudo&quot;
+}</code></pre>
+<p><strong>Réponse typique (201) :</strong> utilisateur créé + éventuellement tokens selon implémentation.</p>
+<p>En cas de conflit email/username → 409 ou 400 avec <code>message</code>.</p>
+<p>---</p>
+<h2>POST /api/register/developer</h2>
+<p>Inscription développeur : crée le compte <strong>et</strong> un <code>DeveloperProfile</code>.</p>
+<p><strong>Body typique :</strong></p>
+<pre><code>{
+  &quot;email&quot;: &quot;studio@example.com&quot;,
+  &quot;password&quot;: &quot;MotDePasseSecurise1&quot;,
+  &quot;username&quot;: &quot;MonStudio&quot;,
+  &quot;studio_name&quot;: &quot;Mon Studio&quot;,
+  &quot;website&quot;: &quot;https://monstudio.sn&quot;
+}</code></pre>
+<p>Le rôle résultant est <code>developer</code>.</p>
+<p>---</p>
+<h2>POST /api/login</h2>
+<p><strong>Body :</strong></p>
+<pre><code>{
+  &quot;email&quot;: &quot;joueur@example.com&quot;,
+  &quot;password&quot;: &quot;MotDePasseSecurise1&quot;
+}</code></pre>
+<p><strong>Réponse typique :</strong></p>
+<pre><code>{
+  &quot;token&quot;: &quot;&lt;jwt_access&gt;&quot;,
+  &quot;refresh_token&quot;: &quot;&lt;refresh&gt;&quot;,
+  &quot;user&quot;: {
+    &quot;id&quot;: 1,
+    &quot;email&quot;: &quot;joueur@example.com&quot;,
+    &quot;username&quot;: &quot;pseudo&quot;,
+    &quot;roles&quot;: [&quot;ROLE_USER&quot;]
+  }
+}</code></pre>
+<p>Le refresh token est aussi posé en <strong>cookie HttpOnly</strong> (selon config <code>RefreshTokenCookie</code> / gesdinet).</p>
+<p>Préférer le cookie pour le front web ; le body <code>refresh_token</code> reste utile pour mobile.</p>
+<p>---</p>
+<h2>POST /api/logout</h2>
+<p>JWT requis. Invalide le refresh token côté serveur et efface le cookie.</p>
+<p>---</p>
+<h2>GET /api/me</h2>
+<p>JWT requis. Retourne le profil courant (id, email, username, roles, statut, avatar, etc.).</p>
+<p>Pour un profil plus riche (commandes, etc.) préférer <code>GET /api/account</code>.</p>
+<p>---</p>
+<h2>POST /api/token/refresh (aussi GET)</h2>
+<p>Renouvelle l’access token.</p>
+<ul>
+<li>Via <strong>cookie</strong> : envoyer la requête avec credentials, sans body.</li>
+<li>Via <strong>body</strong> :</li>
+</ul>
+<pre><code>{
+  &quot;refresh_token&quot;: &quot;&lt;refresh&gt;&quot;
+}</code></pre>
+<p><strong>Réponse :</strong></p>
+<pre><code>{
+  &quot;token&quot;: &quot;&lt;nouveau_jwt_access&gt;&quot;
+}</code></pre>
+<p>---</p>
+<h2>Notes sécurité</h2>
+<ul>
+<li>Access JWT à durée de vie courte ; refresh plus long, stocké en base (<code>RefreshToken</code>).</li>
+<li>Ne jamais exposer le refresh token en localStorage si le cookie HttpOnly est disponible.</li>
+<li>Rate limiting possible sur login/register selon config.</li>
+</ul>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

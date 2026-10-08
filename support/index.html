@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="active" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Support</h1>
+<p>Tickets de support utilisateur et administration.</p>
+<h2>Catégories</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/support/categories</code></td>
+<td>Public / JWT</td>
+<td>Liste des catégories de tickets</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Utilisateur</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/support/tickets</code></td>
+<td>JWT</td>
+<td>Créer un ticket</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/support/tickets/mine</code></td>
+<td>JWT</td>
+<td>Mes tickets</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/support/tickets/{id}</code></td>
+<td>JWT</td>
+<td>Détail d’un ticket (si propriétaire)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/support/tickets/{id}/reply</code></td>
+<td>JWT</td>
+<td>Répondre sur mon ticket</td>
+</tr>
+</tbody></table>
+<h3>POST /api/support/tickets</h3>
+<pre><code>{
+  &quot;category&quot;: &quot;paiement&quot;,
+  &quot;subject&quot;: &quot;Problème de paiement&quot;,
+  &quot;message&quot;: &quot;Description du problème...&quot;
+}</code></pre>
+<h3>POST /api/support/tickets/{id}/reply</h3>
+<pre><code>{
+  &quot;message&quot;: &quot;Suite de mon message...&quot;
+}</code></pre>
+<p>---</p>
+<h2>Admin</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/support/tickets</code></td>
+<td>Admin</td>
+<td>Liste de tous les tickets</td>
+</tr>
+<tr>
+<td>PATCH/POST</td>
+<td><code>/api/admin/support/tickets/{id}</code></td>
+<td>Admin</td>
+<td>Mettre à jour (statut, réponse staff)</td>
+</tr>
+</tbody></table>
+<p>Body typique de mise à jour admin :</p>
+<pre><code>{
+  &quot;status&quot;: &quot;resolved&quot;,
+  &quot;reply&quot;: &quot;Nous avons traité votre demande.&quot;
+}</code></pre>
+<p>Les statuts exacts dépendent de l’implémentation du contrôleur <code>SupportTicketController</code>.</p>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

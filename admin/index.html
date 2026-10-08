@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="active" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Administration &amp; modération</h1>
+<p>JWT avec rôle <strong>admin</strong> ou <strong>moderator</strong> selon l’endpoint.</p>
+<h2>Utilisateurs &amp; développeurs</h2>
+<p>Préfixe : <code>/api/admin</code></p>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Rôle</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/users</code></td>
+<td>Admin</td>
+<td>Liste utilisateurs</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/users</code></td>
+<td>Admin</td>
+<td>Créer un utilisateur</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/users/{id}/status</code></td>
+<td>Admin</td>
+<td><code>active</code> / <code>suspended</code></td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/users/{id}/role</code></td>
+<td>Admin</td>
+<td>Changer le rôle</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/developers</code></td>
+<td>Admin</td>
+<td>Liste développeurs</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/developers/{id}/verified</code></td>
+<td>Admin</td>
+<td>Marquer vérifié</td>
+</tr>
+</tbody></table>
+<h3>Body status</h3>
+<pre><code>{ &quot;status&quot;: &quot;suspended&quot; }</code></pre>
+<h3>Body role</h3>
+<pre><code>{ &quot;role&quot;: &quot;developer&quot; }</code></pre>
+<p>Valeurs : <code>user</code> \| <code>developer</code> \| <code>moderator</code> \| <code>admin</code>.</p>
+<p>---</p>
+<h2>Modération des jeux</h2>
+<p>Préfixe : <code>/api/admin/games</code></p>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/games/queue</code></td>
+<td>File de modération (pending, etc.)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/games/{id}</code></td>
+<td>Détail + contexte modération</td>
+</tr>
+<tr>
+<td>OPTIONS</td>
+<td><code>/api/admin/games/{id}/download</code></td>
+<td>CORS preflight download</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/games/{id}/download</code></td>
+<td>Télécharger le build pour revue</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/games/{id}/feedback</code></td>
+<td>Envoyer un feedback au développeur</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/games/{id}/approve</code></td>
+<td>Approuver</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/games/{id}/reject</code></td>
+<td>Rejeter (body raison optionnel)</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/admin/games/{id}</code></td>
+<td>Supprimer</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/games/{id}/unpublish</code></td>
+<td>Dépublier</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/games/{id}/republish</code></td>
+<td>Republier</td>
+</tr>
+</tbody></table>
+<p>Les actions de modération génèrent des <code>ModerationActivity</code> (historique).</p>
+<p>---</p>
+<h2>Signalements</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/reports</code></td>
+<td>Liste des signalements</td>
+</tr>
+<tr>
+<td>DELETE/POST</td>
+<td><code>/api/admin/reports/{id}</code></td>
+<td>Rejeter / dismiss</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/reports/{id}/resolve</code></td>
+<td>Marquer résolu</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Commandes &amp; paiements</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/orders</code></td>
+<td>Liste commandes</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/payments</code></td>
+<td>Liste paiements</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/orders/{id}/cancel</code></td>
+<td>Annuler</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/orders/{id}/refund</code></td>
+<td>Rembourser</td>
+</tr>
+<tr>
+<td>POST/PUT/PATCH</td>
+<td><code>/api/admin/orders/{id}/payout</code></td>
+<td>Marquer / ajuster payout développeur</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Promotions</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/promotions</code></td>
+<td>Liste</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/promotions</code></td>
+<td>Créer</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/promotions/{id}</code></td>
+<td>Modifier</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/admin/promotions/{id}</code></td>
+<td>Supprimer</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Commissions</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/commission</code></td>
+<td>Taux de commission global</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/commission</code></td>
+<td>Modifier le taux global</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/developer-commission-promos</code></td>
+<td>Promos commission par dev</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/developer-commission-promos</code></td>
+<td>Créer</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/developer-commission-promos/{id}</code></td>
+<td>Modifier</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/admin/developer-commission-promos/{id}</code></td>
+<td>Supprimer</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Stats plateforme</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/platform-stats</code></td>
+<td>Stats globales</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/play-stats</code></td>
+<td>Stats de play</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/site-visits/stats</code></td>
+<td>Stats de visites site</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Support (admin)</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/support/tickets</code></td>
+<td>Liste tickets</td>
+</tr>
+<tr>
+<td>PATCH/POST</td>
+<td><code>/api/admin/support/tickets/{id}</code></td>
+<td>Mettre à jour (statut, réponse admin)</td>
+</tr>
+</tbody></table>
+<p>Voir <a href="../support/index.html">Support</a>.</p>
+<p>---</p>
+<h2>Infrastructure (admin)</h2>
+<p>Préfixe : <code>/api/admin/infra</code></p>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/overview</code></td>
+<td>Vue d’ensemble</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/health</code></td>
+<td>Santé</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/metrics</code></td>
+<td>Métriques</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/logs</code></td>
+<td>Logs</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/threats</code></td>
+<td>Menaces</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/requests</code></td>
+<td>Requêtes</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/channels</code></td>
+<td>Canaux</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/bandwidth</code></td>
+<td>Bande passante</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/audit-summary</code></td>
+<td>Résumé audit</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/verify-chain</code></td>
+<td>Vérification chaîne</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/export</code></td>
+<td>Export</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/export/{channel}</code></td>
+<td>Export par canal</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/alerts</code></td>
+<td>Alertes</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/infra/control/...</code></td>
+<td>Actions de contrôle (selon <code>InfraControlCommand</code> / contrôleur)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/infra/storage</code></td>
+<td>Config stockage</td>
+</tr>
+<tr>
+<td>PUT/POST</td>
+<td><code>/api/admin/infra/storage</code></td>
+<td>Modifier stockage</td>
+</tr>
+<tr>
+<td>PUT/POST</td>
+<td><code>/api/admin/infra/build-limits</code></td>
+<td>Limites de build</td>
+</tr>
+</tbody></table>
+<p>Ces endpoints servent le tableau de bord infrastructure / sécurité ops.</p>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

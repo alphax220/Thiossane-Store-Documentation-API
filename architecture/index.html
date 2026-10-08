@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="active" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Thiossane Store — Documentation Backend</h1>
+<div class="alert info">Guide d&#x27;onboarding pour toute personne qui rejoint le projet. Objectif : comprendre en 20 minutes comment le code est organisé, pourquoi il est organisé ainsi, et où aller pour ajouter une fonctionnalité sans casser la sécurité existante.</div>
+<h2>1. C&#x27;est quoi, ce projet ?</h2>
+<p>Une <strong>marketplace de jeux vidéo</strong> (façon itch.io), pensée pour le marché sénégalais :</p>
+<ul>
+<li>Les <strong>joueurs</strong> parcourent un catalogue, achètent ou téléchargent des jeux gratuits, laissent des avis, mettent des favoris.</li>
+<li>Les <strong>développeurs/studios</strong> publient des jeux, gèrent leurs versions (par plateforme), passent par une modération avant publication.</li>
+<li>Les <strong>administrateurs</strong> modèrent les jeux, gèrent les comptes et les réglages système.</li>
+<li>Le paiement se fait par <strong>mobile money</strong> (Wave, Orange Money, YAS), en francs CFA (XOF), avec confirmation asynchrone par webhook.</li>
+</ul>
+<h2>2. Stack technique</h2>
+<table><thead><tr>
+<th>Brique</th>
+<th>Rôle</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>PHP 8.2+ / Symfony 7</strong></td>
+<td>Framework applicatif (routing, DI, sécurité, validation)</td>
+</tr>
+<tr>
+<td><strong>API Platform</strong></td>
+<td>Génère automatiquement une API REST/JSON à partir des entités Doctrine (<code>#[ApiResource]</code>)</td>
+</tr>
+<tr>
+<td><strong>Doctrine ORM</strong></td>
+<td>Mapping objet-relationnel, requêtes vers la base de données</td>
+</tr>
+<tr>
+<td><strong>LexikJWTAuthenticationBundle</strong></td>
+<td>Émission/validation des tokens JWT (access token)</td>
+</tr>
+<tr>
+<td><strong>GesdinetJWTRefreshTokenBundle</strong></td>
+<td>Entité de base pour les refresh tokens (la logique métier est ré-implémentée à la main, voir §6)</td>
+</tr>
+<tr>
+<td><strong>NelmioCorsBundle</strong></td>
+<td>Autorise les appels cross-origin depuis le frontend (localhost en dev)</td>
+</tr>
+</tbody></table>
+<p>Il n&#x27;y a <strong>pas de dossier <code>public/</code>, <code>bin/</code>, <code>.env</code>, <code>composer.json</code> ni <code>migrations/</code></strong> dans cet export : seuls <code>src/</code> et <code>config/</code> sont fournis. Pour faire tourner le projet localement, il faut les régénérer (voir §9 &quot;Mettre en route le projet&quot;).</p>
+<h2>3. Vue d&#x27;ensemble des dossiers</h2>
+<pre><code>src/
+├── Entity/          Les &quot;tables&quot; de la base + leur exposition API Platform (#[ApiResource])
+├── Repository/       Requêtes Doctrine par entité (la plupart sont vides, générées par défaut)
+├── Controller/Api/   Contrôleurs &quot;classiques&quot; pour tout ce qui n&#x27;est PAS du CRUD générique
+│                      (auth, checkout, téléchargement, webhooks, modération, compte)
+├── Security/          Règles d&#x27;autorisation fines (Voters) + politiques de visibilité
+│   └── Voter/
+├── Doctrine/           Extensions qui filtrent automatiquement les requêtes API Platform
+│                      selon qui est connecté (ex : &quot;je ne vois que MES commandes&quot;)
+├── State/              Processeurs API Platform : interceptent une écriture (Post/Put)
+│                      pour y injecter une logique serveur (ex : forcer le propriétaire)
+├── Payment/            Intégration avec les prestataires de paiement mobile money
+├── Enum/               Enums PHP 8.1+ : statuts, rôles, plateformes (valeurs figées)
+├── Command/            Commandes console (ex: promouvoir un utilisateur en admin)
+└── Kernel.php          Point d&#x27;entrée Symfony (ne pas toucher)
+
+config/
+├── packages/           Configuration de chaque bundle (sécurité, JWT, CORS, Doctrine...)
+├── routes.yaml          Déclare où Symfony va chercher les routes (contrôleurs + API Platform)
+└── services.yaml        Config générale des services (autowiring activé partout dans src/)</code></pre>
+<p><strong>Règle d&#x27;or du projet</strong> : si une ressource peut être décrite comme du CRUD standard avec des règles d&#x27;autorisation simples, elle est modélisée en <code>#[ApiResource]</code> directement sur l&#x27;entité (Doctrine + API Platform génèrent tout : routes, validation, sérialisation). Dès qu&#x27;il y a une <strong>logique métier qui dépasse le CRUD</strong> (calcul de montant, vérification de droits d&#x27;achat, appel à un service externe, cookie, etc.), on écrit un <strong>contrôleur classique</strong> dans <code>src/Controller/Api/</code>.</p>
+<h2>4. Les entités et leurs relations</h2>
+<pre><code>User ──1:1── DeveloperProfile ──1:N── Game ──1:N── GameVersion
+ │                                      │
+ │                                      ├──1:N── Review
+ │                                      ├──1:N── Favorite
+ │                                      ├──1:N── Report
+ │                                      ├──1:N── Download
+ │                                      ├──1:N── BrowserSession
+ │                                      └──1:N── OrderItem
+ │
+ ├──1:N── Order ──1:N── OrderItem
+ │          └──1:N── Payment
+ ├──1:N── Download
+ ├──1:N── BrowserSession
+ ├──1:N── Review
+ ├──1:N── Favorite
+ └──1:N── Report (en tant que &quot;reporter&quot;)</code></pre>
+<h3>Rôle de chaque entité</h3>
+<table><thead><tr>
+<th>Entité</th>
+<th>Rôle métier</th>
+</tr></thead><tbody>
+<tr>
+<td><code>User</code></td>
+<td>Compte (joueur, développeur ou admin — voir <code>UserRole</code>)</td>
+</tr>
+<tr>
+<td><code>DeveloperProfile</code></td>
+<td>Fiche &quot;studio&quot; d&#x27;un développeur (nom, site web, badge vérifié)</td>
+</tr>
+<tr>
+<td><code>Category</code></td>
+<td>Genre de jeu (Action, Puzzle...), public en lecture</td>
+</tr>
+<tr>
+<td><code>Game</code></td>
+<td>Un jeu, avec un statut de modération (<code>GameStatus</code> : draft → pending → approved/rejected)</td>
+</tr>
+<tr>
+<td><code>GameVersion</code></td>
+<td>Un binaire téléchargeable pour une plateforme donnée (<code>Platform</code>), avec un flag &quot;démo&quot;</td>
+</tr>
+<tr>
+<td><code>Order</code> / <code>OrderItem</code></td>
+<td>Une commande et ses lignes (jeux achetés, prix figé à l&#x27;achat)</td>
+</tr>
+<tr>
+<td><code>Payment</code></td>
+<td>Une tentative de paiement mobile money liée à une commande</td>
+</tr>
+<tr>
+<td><code>Download</code></td>
+<td>Log d&#x27;un téléchargement effectué (traçabilité, contrôle d&#x27;accès)</td>
+</tr>
+<tr>
+<td><code>BrowserSession</code></td>
+<td>Durée d&#x27;une session &quot;jouer dans le navigateur&quot; (stats)</td>
+</tr>
+<tr>
+<td><code>Review</code></td>
+<td>Avis (note 1-5 + commentaire), <strong>public</strong></td>
+</tr>
+<tr>
+<td><code>Favorite</code></td>
+<td>Jeu mis en favori par un utilisateur</td>
+</tr>
+<tr>
+<td><code>Report</code></td>
+<td>Signalement d&#x27;un jeu par un utilisateur</td>
+</tr>
+<tr>
+<td><code>SystemSetting</code></td>
+<td>Réglages internes clé/valeur, réservés aux admins</td>
+</tr>
+<tr>
+<td><code>RefreshToken</code></td>
+<td>Support technique du refresh token JWT</td>
+</tr>
+</tbody></table>
+<h3>Interfaces transverses (important à comprendre !)</h3>
+<p>Deux interfaces dans <code>src/Entity/</code> gouvernent toute la sécurité des ressources &quot;privées&quot; :</p>
+<ul>
+<li><strong><code>OwnableInterface</code></strong> (<code>getOwner(): ?User</code>) : dit &quot;cette ressource appartient à cet utilisateur&quot;. Utilisée par <code>OwnershipVoter</code> pour répondre à &quot;ai-je le droit de voir/modifier/supprimer CET élément précis ?&quot;.</li>
+<li><strong><code>ScopedToOwnerInterface extends OwnableInterface</code></strong> (+ <code>getOwnerPath(): string</code>) : en plus, dit &quot;et quand on liste la collection, filtre-la pour ne montrer que les miennes&quot;. Utilisée par <code>OwnershipCollectionExtension</code> pour modifier la requête SQL de la <code>GetCollection</code>.</li>
+</ul>
+<p><code>Review</code> n&#x27;implémente QUE <code>OwnableInterface</code> (pas <code>ScopedToOwnerInterface</code>) car la liste des avis doit rester visible par tout le monde — seule l&#x27;édition/suppression est réservée à l&#x27;auteur ou à un admin. C&#x27;est l&#x27;exemple à connaître par cœur avant de créer une nouvelle entité &quot;à moitié privée&quot;.</p>
+<h2>5. Comment API Platform + la sécurité s&#x27;articulent</h2>
+<p>Sur chaque entité, l&#x27;attribut <code>#[ApiResource(...)]</code> déclare :</p>
+<ul>
+<li>les opérations exposées (<code>GetCollection</code>, <code>Get</code>, <code>Post</code>, <code>Put</code>, <code>Delete</code>),</li>
+<li>une expression <code>security</code> par opération (évaluée par le <code>ExpressionLanguage</code> de Symfony, avec accès à <code>object</code>, <code>previous_object</code>, <code>is_granted(...)</code>),</li>
+<li>parfois un <code>processor</code> (classe qui intercepte l&#x27;écriture, voir §7) ou un <code>securityPostDenormalize</code> (règle vérifiée APRÈS que les nouvelles valeurs envoyées par le client ont été appliquées à l&#x27;objet — utile pour empêcher un changement de statut interdit, voir <code>Game</code>).</li>
+</ul>
+<p>Trois couches de sécurité se combinent, dans cet ordre :</p>
+<ol>
+<li><strong><code>config/packages/security.yaml</code></strong> → <code>access_control</code> : règles globales par préfixe d&#x27;URL (ex : <code>^/api</code> exige d&#x27;être authentifié, sauf exceptions explicites comme <code>/api/login</code>, <code>/api/register</code>, les <code>GET</code> sur <code>/api/games</code>, <code>/api/categories</code>, <code>/api/reviews</code>).</li>
+<li><strong><code>security</code> sur chaque <code>#[ApiResource]</code>/opération</strong> : règle fine par ressource (ex : &quot;seul un admin peut créer une catégorie&quot;).</li>
+<li><strong>Les Voters</strong> (<code>src/Security/Voter/</code>) : logique d&#x27;autorisation réutilisable sur un objet précis.</li>
+</ol>
+<table><thead><tr>
+<th>Voter</th>
+<th>Attribut(s)</th>
+<th>Vérifie que...</th>
+</tr></thead><tbody>
+<tr>
+<td><code>OwnershipVoter</code></td>
+<td><code>OWNER_VIEW</code>, <code>OWNER_EDIT</code>, <code>OWNER_DELETE</code></td>
+<td>l&#x27;utilisateur connecté est le <code>getOwner()</code> de la ressource</td>
+</tr>
+<tr>
+<td><code>GameVoter</code></td>
+<td><code>GAME_MANAGE</code></td>
+<td>l&#x27;utilisateur est le développeur propriétaire du jeu</td>
+</tr>
+<tr>
+<td><code>GameVersionVoter</code></td>
+<td><code>GAME_VERSION_MANAGE</code></td>
+<td>l&#x27;utilisateur est le développeur propriétaire du JEU PARENT de la version</td>
+</tr>
+<tr>
+<td><code>DeveloperProfileVoter</code></td>
+<td><code>DEV_PROFILE_MANAGE</code></td>
+<td>l&#x27;utilisateur est le titulaire du profil développeur</td>
+</tr>
+</tbody></table>
+<p><strong><code>ROLE_ADMIN</code> n&#x27;est jamais géré dans les Voters eux-mêmes</strong> : il est ajouté explicitement à côté dans chaque expression <code>security</code>, ex. <code>&quot;is_granted(&#x27;ROLE_ADMIN&#x27;) or is_granted(&#x27;OWNER_VIEW&#x27;, object)&quot;</code>. Ce choix garde chaque Voter simple et à responsabilité unique — n&#x27;oublie jamais le <code>is_granted(&#x27;ROLE_ADMIN&#x27;) or ...</code> quand tu ajoutes une nouvelle opération sur une ressource &quot;privée&quot;.</p>
+<h3>Filtrage automatique des collections (<code>src/Doctrine/</code>)</h3>
+<p>Deux extensions Doctrine modifient la requête SQL générée par API Platform <strong>avant</strong> qu&#x27;elle ne parte en base, pour appliquer des règles impossibles à exprimer avec un simple <code>security</code> (qui s&#x27;applique après coup, item par item) :</p>
+<ul>
+<li><strong><code>OwnershipCollectionExtension</code></strong> : pour toute entité <code>ScopedToOwnerInterface</code>, ajoute automatiquement <code>WHERE &lt;ownerPath&gt; = :current_user</code> (sauf si l&#x27;appelant est admin). C&#x27;est pour ça qu&#x27;un <code>GetCollection</code> sur <code>/api/orders</code> ne renvoie jamais les commandes des autres, sans qu&#x27;aucun contrôleur n&#x27;ait à écrire cette clause.</li>
+<li><strong><code>GameVisibilityExtension</code></strong> : cas spécial de <code>Game</code>, avec 3 vues différentes (<code>games_public</code>, <code>games_developer</code>, <code>games_admin</code>) et une politique dédiée dans <code>App\Security\GameVisibilityPolicy</code> (catalogue public = uniquement <code>approved</code>, espace développeur = ses propres jeux tous statuts, espace admin = tout).</li>
+</ul>
+<p><strong>Point clé pour un nouveau contributeur</strong> : si tu ajoutes une entité &quot;privée&quot; (liée à un seul utilisateur), fais-la implémenter <code>ScopedToOwnerInterface</code> et donne-lui un <code>getOwnerPath()</code> correct — sinon sa <code>GetCollection</code> fuitera les données de tout le monde vers tout le monde.</p>
+<h2>6. Authentification : JWT + refresh token</h2>
+<pre><code>POST /api/login  (email, password)
+   │
+   ├─► JWT (access token, 2h — voir lexik_jwt_authentication.yaml `token_ttl`)
+   │      renvoyé dans le corps JSON, à mettre dans l&#x27;en-tête
+   │      Authorization: Bearer &lt;jwt&gt; sur chaque appel /api/*
+   │
+   └─► Cookie HttpOnly &quot;refresh_token&quot; (30 jours, path=/api)
+          jamais lisible en JS (protection XSS), utilisé UNIQUEMENT par :
+
+POST /api/token/refresh   (pas de body, le cookie suffit)
+   └─► nouveau JWT + le cookie &quot;refresh_token&quot; est &quot;tourné&quot; (rotation :
+        nouvelle valeur aléatoire + nouvelle expiration à chaque appel,
+        pour qu&#x27;un token volé et rejoué après une rotation soit déjà mort)
+
+POST /api/logout
+   └─► supprime le refresh token en base + efface le cookie</code></pre>
+<p>Fichiers impliqués : <code>AuthController</code> (login/register/logout), <code>RefreshTokenController</code> (refresh), <code>App\Security\RefreshTokenCookie</code> (nom du cookie centralisé), <code>App\Entity\RefreshToken</code>.</p>
+<p>⚠️ <strong>Piège classique</strong> : le nom du cookie (<code>RefreshTokenCookie::NAME</code>, actuellement <code>refresh_token</code>) doit être STRICTEMENT identique à <code>token_parameter_name</code> dans <code>config/packages/gesdinet_jwt_refresh_token.yaml</code>. Si tu renommes l&#x27;un sans l&#x27;autre, <code>/api/token/refresh</code> cesse de trouver le cookie et répond systématiquement &quot;Invalid or expired refresh token&quot;.</p>
+<p>Il n&#x27;existe <strong>aucune route publique pour créer un compte admin</strong> (par design, voir <code>src/Command/PromoteUserCommand.php</code>). Pour promouvoir un utilisateur :</p>
+<pre><code>php bin/console app:user:promote email@example.com admin</code></pre>
+<h2>7. Les &quot;State Processors&quot; (src/State/)</h2>
+<p>API Platform désérialise le JSON entrant directement dans l&#x27;entité, ce qui est dangereux si on laisse le client remplir n&#x27;importe quel champ (ex : <code>user_id</code>, <code>status</code>). Les processeurs interceptent l&#x27;écriture pour corriger/compléter l&#x27;objet <strong>avant</strong> la persistance :</p>
+<ul>
+<li><strong><code>CurrentUserProcessor</code></strong> : force le champ propriétaire (<code>user</code>, <code>reporter</code>...) à l&#x27;utilisateur JWT courant. Branché sur <code>Favorite</code>, <code>Review</code>, <code>Report</code>, <code>Download</code>, <code>BrowserSession</code>.</li>
+<li><strong><code>GameCreateProcessor</code></strong> : à la création d&#x27;un <code>Game</code>, vérifie le rôle métier &quot;Developer&quot;, récupère le <code>DeveloperProfile</code> de l&#x27;appelant, force le statut à <code>Draft</code>, et fait lui-même le <code>persist()</code>/<code>flush()</code> (nécessaire ici car API Platform ne sait pas encore à quelle relation rattacher l&#x27;objet avant ce traitement).</li>
+</ul>
+<p><strong>Règle à retenir</strong> : dès qu&#x27;un champ d&#x27;une entité ne doit JAMAIS être choisi par le client (propriétaire, statut initial, montant...), la bonne réponse n&#x27;est pas de le retirer du <code>denormalizationContext</code> (groupe <code>:write</code>) seulement — il faut aussi vérifier qu&#x27;aucun processeur ne le laisse passer tel quel, ou en écrire un.</p>
+<h2>8. Achats et paiements (le flux le plus sensible du projet)</h2>
+<pre><code>1. POST /api/checkout  { game_id, method, phone }
+   (CheckoutController)
+   ─► vérifie : jeu existant + approuvé + payant, méthode supportée
+      (Wave / Orange Money / YAS), téléphone au format sénégalais
+   ─► calcule le MONTANT côté serveur à partir du prix réel du jeu
+      (le client ne peut jamais envoyer un montant)
+   ─► crée Order + OrderItem + Payment, tous en statut &quot;Pending&quot;
+      dans une transaction Doctrine (wrapInTransaction)
+   ─► appelle PaymentProviderInterface::initiate() : requête HTTP vers le
+      prestataire externe, récupère une éventuelle checkout_url
+
+2. Le joueur finalise le paiement côté prestataire (app Wave, etc.)
+
+3. Le prestataire notifie de façon ASYNCHRONE :
+   POST /api/webhooks/payments/{provider}
+   (PaymentWebhookController — route PUBLIQUE, sécurisée par signature HMAC)
+   ─► vérifie la signature (PaymentWebhookVerifier, HMAC-SHA256,
+      un secret différent par prestataire)
+   ─► vérifie l&#x27;idempotence via webhookEventId (un webhook rejoué ne
+      change pas deux fois l&#x27;état)
+   ─► met Payment + Order au statut Paid ou Failed
+
+4. Le frontend peut interroger GET /api/payments/{id} (PaymentStatusController)
+   pour du polling en attendant la confirmation.
+
+5. GET /api/games/{id}/download (DownloadController)
+   ─► vérifie que le jeu est gratuit OU qu&#x27;il existe une Order+Payment
+      &quot;Paid&quot; pour CET utilisateur et CE jeu avant de renvoyer le lien
+   ─► journalise le téléchargement dans un Download</code></pre>
+<p><strong>Ne jamais</strong> faire passer un <code>Payment</code>/<code>Order</code> à &quot;Paid&quot; ailleurs que dans <code>PaymentWebhookController</code> : c&#x27;est la seule source de vérité, précisément parce qu&#x27;elle est protégée par la vérification de signature. Un bouton &quot;j&#x27;ai payé&quot; côté client, ou un changement de statut dans <code>CheckoutController</code>, casserait cette garantie.</p>
+<h2>9. Mettre en route le projet (checklist)</h2>
+<p>Cet export ne contient que <code>src/</code> et <code>config/</code>. Pour lancer le projet localement il faut, dans l&#x27;ordre :</p>
+<ol>
+<li><code>composer require symfony/framework-bundle api-platform/core doctrine/orm doctrine/doctrine-bundle doctrine/doctrine-migrations-bundle lexik/jwt-authentication-bundle gesdinet/jwt-refresh-token-bundle nelmio/cors-bundle</code> (+ les bundles listés dans <code>config/bundles.php</code>).</li>
+<li>Créer un <code>.env.local</code> avec au minimum :</li>
+</ol>
+<p>- <code>DATABASE_URL</code> (PostgreSQL recommandé, voir <code>identity_generation_preferences</code> dans <code>doctrine.yaml</code>)</p>
+<p>- <code>JWT_SECRET_KEY</code>, <code>JWT_PUBLIC_KEY</code>, <code>JWT_PASSPHRASE</code> (générer une paire de clés : <code>php bin/console lexik:jwt:generate-keypair</code>)</p>
+<p>- <code>APP_PUBLIC_URL</code> (utilisée par <code>PaymentProvider</code> pour construire l&#x27;URL de callback webhook)</p>
+<p>- <code>PAYMENT_WAVE_URL</code> / <code>PAYMENT_WAVE_TOKEN</code> / <code>PAYMENT_WAVE_WEBHOOK_SECRET</code> (idem pour <code>ORANGE_MONEY</code> et <code>YAS</code>) — sans ces variables, l&#x27;achat d&#x27;un jeu payant échoue proprement avec un message &quot;prestataire non configuré côté serveur&quot;.</p>
+<ol>
+<li><code>php bin/console doctrine:database:create</code></li>
+<li><code>php bin/console doctrine:migrations:diff</code> puis <code>doctrine:migrations:migrate</code> (aucune migration n&#x27;est fournie dans cet export, il faut les régénérer depuis les entités).</li>
+<li><code>php bin/console app:user:promote &lt;ton-email&gt; admin</code> après avoir créé un compte via <code>/api/register</code>, pour avoir un accès admin de test.</li>
+<li>Le CORS est déjà configuré pour <code>localhost</code>/<code>127.0.0.1</code> (<code>nelmio_cors.yaml</code>) : pense à ajouter le domaine de prod le jour du déploiement (le fichier contient un commentaire à cet effet).</li>
+</ol>
+<h2>10. Conventions à respecter en ajoutant du code</h2>
+<ul>
+<li><strong>Une nouvelle ressource &quot;CRUD simple&quot;</strong> → nouvelle entité avec <code>#[ApiResource]</code>, groupes de sérialisation <code>nom:read</code> / <code>nom:write</code>, et si elle est privée : implémenter <code>ScopedToOwnerInterface</code> + <code>OwnershipCollectionExtension</code> s&#x27;en charge automatiquement.</li>
+<li><strong>Une nouvelle règle d&#x27;autorisation qui dépend de plusieurs entités</strong> (ex: &quot;propriétaire via une relation&quot;) → un nouveau Voter dans <code>src/Security/Voter/</code>, sur le modèle de <code>GameVersionVoter</code>.</li>
+<li><strong>Une logique métier qui écrit plusieurs entités liées, appelle un service externe, ou a des effets de bord (cookies, emails...)</strong> → un contrôleur classique dans <code>src/Controller/Api/</code>, jamais dans l&#x27;entité.</li>
+<li><strong>Un champ qui ne doit jamais être choisi par le client</strong> → le retirer du groupe <code>:write</code> ET vérifier/écrire un State Processor qui le fixe côté serveur.</li>
+<li>Toujours ajouter <code>is_granted(&#x27;ROLE_ADMIN&#x27;) or ...</code> en tête des expressions <code>security</code> d&#x27;une ressource privée, sauf besoin explicite contraire.</li>
+<li>Le style du projet est commenté <strong>en français</strong>, avec des docblocks qui expliquent le *pourquoi* (la règle métier, le risque évité) plutôt que le *quoi* (que le code dit déjà) — garde cette convention pour rester cohérent avec l&#x27;existant.</li>
+</ul>
+<h2>11. Où trouver quoi (index rapide)</h2>
+<table><thead><tr>
+<th>Je veux...</th>
+<th>Je regarde...</th>
+</tr></thead><tbody>
+<tr>
+<td>Ajouter un endpoint d&#x27;authentification</td>
+<td><code>AuthController</code></td>
+</tr>
+<tr>
+<td>Comprendre pourquoi une commande n&#x27;apparaît pas dans la liste d&#x27;un autre user</td>
+<td><code>OwnershipCollectionExtension</code> + <code>ScopedToOwnerInterface</code></td>
+</tr>
+<tr>
+<td>Changer la règle &quot;qui peut modifier un jeu&quot;</td>
+<td><code>GameVoter</code> + expression <code>security</code> dans <code>Game.php</code></td>
+</tr>
+<tr>
+<td>Ajouter un moyen de paiement</td>
+<td><code>PaymentProvider</code>, <code>PaymentProviderInterface</code>, <code>PaymentWebhookVerifier</code></td>
+</tr>
+<tr>
+<td>Comprendre le cycle de vie d&#x27;un jeu</td>
+<td>Enum <code>GameStatus</code> + <code>Game.php</code> (docblock) + <code>GameModerationController</code></td>
+</tr>
+<tr>
+<td>Débugger le refresh token</td>
+<td><code>RefreshTokenCookie</code>, <code>gesdinet_jwt_refresh_token.yaml</code>, <code>AuthController::login</code>, <code>RefreshTokenController</code></td>
+</tr>
+<tr>
+<td>Voir tous les rôles possibles</td>
+<td><code>App\Enum\UserRole</code> + <code>security.yaml</code> (<code>role_hierarchy</code>)</td>
+</tr>
+</tbody></table>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

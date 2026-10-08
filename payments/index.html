@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paiements — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="active" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Paiements &amp; checkout</h1>
+<h2>État actuel</h2>
+<div class="alert warning"><strong>Paiements temporairement désactivés</strong>  Dans <code>CheckoutController</code>, <code>$allowedMethods = []</code>. Toute tentative de checkout renvoie <strong>400</strong> : <code>&quot;Unsupported payment method&quot;</code>. Les méthodes prévues (quand réactivées) : <strong>Wave</strong>, <strong>Orange Money</strong>, <strong>YAS</strong>.</div>
+<p>L’UI front doit afficher « bientôt disponible » et ne pas appeler le checkout pour l’instant, ou gérer explicitement l’erreur 400.</p>
+<p>---</p>
+<h2>Checkout</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/checkout</code></td>
+<td>JWT</td>
+<td>Créer commande + tentative de paiement</td>
+</tr>
+</tbody></table>
+<h3>POST /api/checkout</h3>
+<p><strong>Body (quand les méthodes seront réactivées) :</strong></p>
+<pre><code>{
+  &quot;game_id&quot;: 5,
+  &quot;method&quot;: &quot;Wave&quot;,
+  &quot;phone&quot;: &quot;+221771234567&quot;
+}</code></pre>
+<ul>
+<li><code>method</code> : une des méthodes autorisées (actuellement aucune).</li>
+<li><code>phone</code> : numéro sénégalais, format <code>^(?:\+221)?[0-9]{9}$</code>.</li>
+</ul>
+<p><strong>Rate limiting</strong> : par utilisateur (pas par IP). En cas de dépassement → <strong>429</strong> avec header <code>Retry-After</code>.</p>
+<p><strong>Réponse typique (si succès) :</strong></p>
+<pre><code>{
+  &quot;order_id&quot;: 18,
+  &quot;payment_id&quot;: 42,
+  &quot;reference&quot;: &quot;THS-...&quot;,
+  &quot;status&quot;: &quot;pending&quot;,
+  &quot;method&quot;: &quot;Wave&quot;,
+  &quot;amount&quot;: &quot;2000.00&quot;,
+  &quot;currency&quot;: &quot;XOF&quot;,
+  &quot;checkout_url&quot;: &quot;https://...&quot;
+}</code></pre>
+<p>Le front redirige vers <code>checkout_url</code> / <code>wave_launch_url</code> selon le prestataire.</p>
+<p>---</p>
+<h2>Statut de paiement</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/payments/{id}/status</code></td>
+<td>JWT</td>
+<td>Statut par id</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/payments/by-reference/{reference}</code></td>
+<td>JWT</td>
+<td>Statut par référence</td>
+</tr>
+</tbody></table>
+<h3>Réponse typique</h3>
+<pre><code>{
+  &quot;payment_id&quot;: 42,
+  &quot;order_id&quot;: 18,
+  &quot;reference&quot;: &quot;THS-...&quot;,
+  &quot;status&quot;: &quot;paid&quot;,
+  &quot;method&quot;: &quot;Wave&quot;,
+  &quot;amount&quot;: &quot;2000.00&quot;,
+  &quot;currency&quot;: &quot;XOF&quot;,
+  &quot;transaction_ref&quot;: &quot;...&quot;,
+  &quot;paid_at&quot;: &quot;2026-09-22T12:00:00+00:00&quot;,
+  &quot;game_id&quot;: 5,
+  &quot;game_title&quot;: &quot;Mon Jeu&quot;,
+  &quot;failure_reason&quot;: null
+}</code></pre>
+<p><strong>Statuts</strong> (<code>PaymentStatus</code>) : <code>pending</code> \| <code>paid</code> \| <code>failed</code> \| <code>cancelled</code> \| <code>refunded</code>.</p>
+<p>---</p>
+<h2>Webhooks</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/webhooks/payments/{provider}</code></td>
+<td>Public*</td>
+<td>Callback prestataire</td>
+</tr>
+</tbody></table>
+<p>\* Vérifié par signature (<code>PaymentWebhookVerifier</code>).</p>
+<p><strong>Ne pas appeler depuis le front.</strong> Réservé aux callbacks Wave / OM / YAS.</p>
+<p><code>provider</code> : slug du prestataire (ex. <code>wave</code>, <code>orange-money</code>, <code>yas</code>).</p>
+<p>---</p>
+<h2>Admin paiements / commandes</h2>
+<p>Voir <a href="../admin/index.html">Admin</a> :</p>
+<ul>
+<li><code>GET /api/admin/orders</code></li>
+<li><code>GET /api/admin/payments</code></li>
+<li><code>POST /api/admin/orders/{id}/cancel</code></li>
+<li><code>POST /api/admin/orders/{id}/refund</code></li>
+<li><code>POST|PUT|PATCH /api/admin/orders/{id}/payout</code></li>
+</ul>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

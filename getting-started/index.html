@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Démarrage rapide — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="active" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Démarrage rapide</h1>
+<h2>Base URL</h2>
+<p>En développement local typique :</p>
+<pre><code>http://localhost:8000</code></pre>
+<p>Tous les endpoints sont préfixés par <code>/api</code>.</p>
+<h2>Headers requis</h2>
+<pre><code>Content-Type: application/json
+Accept: application/json
+Authorization: Bearer &lt;access_token&gt;</code></pre>
+<p>Le header <code>Authorization</code> est requis pour les endpoints protégés (JWT).</p>
+<p>Les endpoints publics (catalogue, register, login, webhooks, deliver signé) n’en ont pas besoin.</p>
+<p>Pour le refresh token via cookie : envoyer <code>credentials: &#x27;include&#x27;</code> côté fetch/XHR.</p>
+<h2>Authentification en 3 étapes</h2>
+<ol>
+<li><code>POST /api/register</code> ou <code>POST /api/login</code> → reçoit <code>token</code> (access JWT) + éventuellement cookie refresh.</li>
+<li>Stocker le <code>token</code> et l’envoyer en <code>Authorization: Bearer …</code> sur les requêtes suivantes.</li>
+<li>Quand l’access expire : <code>POST /api/token/refresh</code> (cookie ou body) → nouveau <code>token</code>.</li>
+</ol>
+<p>Voir <a href="../auth/index.html">Authentification</a>.</p>
+<h2>Rôles et headers</h2>
+<p>Après login, le payload JWT (ou <code>GET /api/me</code>) contient le rôle. Adapter l’UI :</p>
+<ul>
+<li><code>user</code> → catalogue, compte, favoris, achats, support</li>
+<li><code>developer</code> → + espace dev (jeux, uploads, stats)</li>
+<li><code>moderator</code> / <code>admin</code> → + panneaux admin</li>
+</ul>
+<h2>Format des erreurs</h2>
+<p>Réponses d’erreur typiques :</p>
+<pre><code>{
+  &quot;message&quot;: &quot;Description lisible de l’erreur&quot;
+}</code></pre>
+<p>Codes HTTP courants :</p>
+<table><thead><tr>
+<th>Code</th>
+<th>Signification</th>
+</tr></thead><tbody>
+<tr>
+<td>400</td>
+<td>JSON invalide, validation métier</td>
+</tr>
+<tr>
+<td>401</td>
+<td>Non authentifié / token invalide</td>
+</tr>
+<tr>
+<td>403</td>
+<td>Authentifié mais pas le droit</td>
+</tr>
+<tr>
+<td>404</td>
+<td>Ressource introuvable</td>
+</tr>
+<tr>
+<td>409</td>
+<td>Conflit (ex. email déjà pris)</td>
+</tr>
+<tr>
+<td>422</td>
+<td>Erreurs de validation (API Platform)</td>
+</tr>
+<tr>
+<td>429</td>
+<td>Rate limit (checkout, etc.)</td>
+</tr>
+</tbody></table>
+<p>Voir <a href="../conventions/index.html">Conventions</a>.</p>
+<h2>CORS &amp; credentials</h2>
+<p>Le backend autorise les origines localhost / 127.0.0.1 avec credentials.</p>
+<p>En production, le domaine front doit être ajouté dans <code>nelmio_cors.yaml</code>.</p>
+<h2>Pagination (API Platform)</h2>
+<p>Les collections API Platform acceptent en général :</p>
+<ul>
+<li><code>page</code> (numéro de page)</li>
+<li><code>itemsPerPage</code> (taille de page)</li>
+</ul>
+<p>Réponse hydra/JSON-LD ou JSON selon la config Accept.</p>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

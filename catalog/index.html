@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catalogue — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="active" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Catalogue</h1>
+<p>Jeux publics, catégories, promotions, avis et signalements.</p>
+<h2>Jeux (API Platform + extensions)</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/games</code></td>
+<td>Public*</td>
+<td>Liste des jeux <strong>approuvés</strong> (filtre de visibilité)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}</code></td>
+<td>Public*</td>
+<td>Détail d’un jeu approuvé</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/reviews</code></td>
+<td>Public</td>
+<td>Avis du jeu</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/price</code></td>
+<td>Public</td>
+<td>Prix effectif (promo appliquée)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/ownership</code></td>
+<td>JWT</td>
+<td>Possède-t-on le jeu ?</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/categories</code></td>
+<td>Public</td>
+<td>Liste des catégories</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/categories/{id}</code></td>
+<td>Public</td>
+<td>Détail catégorie</td>
+</tr>
+</tbody></table>
+<p>\* Un filtre Doctrine (<code>GameVisibilityExtension</code>) ne renvoie que les jeux <code>approved</code> aux utilisateurs non privilégiés. Les développeurs voient aussi leurs propres jeux via d’autres endpoints (<code>/api/developer/my-games</code>, <code>/api/games?…</code> selon groupes).</p>
+<h3>Filtres / query params courants</h3>
+<p>Selon la config API Platform de l’entité <code>Game</code> : recherche, catégorie, plateforme, tri, pagination (<code>page</code>, <code>itemsPerPage</code>).</p>
+<h3>Champs utiles d’un jeu</h3>
+<ul>
+<li><code>id</code>, <code>title</code>, <code>slug</code>, <code>description</code>, <code>price</code>, <code>status</code> (<code>draft</code> \| <code>pending</code> \| <code>approved</code> \| <code>rejected</code> \| <code>suspended</code>)</li>
+<li><code>coverImage</code>, images de présentation</li>
+<li><code>categories</code>, <code>developer</code> / studio</li>
+<li><code>playInBrowser</code>, versions (<code>GameVersion</code> : plateforme, démo, fichier)</li>
+<li>Stats éventuelles (notes moyennes, téléchargements) selon groupes de sérialisation</li>
+</ul>
+<p>---</p>
+<h2>Promotions</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/promotions/active</code></td>
+<td>Public</td>
+<td>Promotions actives</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/price</code></td>
+<td>Public</td>
+<td>Prix après promo</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/promotions</code></td>
+<td>Admin</td>
+<td>Liste admin</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/promotions</code></td>
+<td>Admin</td>
+<td>Créer</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/admin/promotions/{id}</code></td>
+<td>Admin</td>
+<td>Modifier</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/admin/promotions/{id}</code></td>
+<td>Admin</td>
+<td>Supprimer</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Avis (reviews)</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/reviews</code></td>
+<td>Public</td>
+<td>Liste des avis d’un jeu</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/reviews/submit</code></td>
+<td>JWT</td>
+<td>Soumettre un avis</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/reviews</code></td>
+<td>Dev</td>
+<td>Avis sur les jeux du développeur</td>
+</tr>
+<tr>
+<td>POST/PUT</td>
+<td><code>/api/developer/reviews/{id}/reply</code></td>
+<td>Dev</td>
+<td>Répondre à un avis</td>
+</tr>
+</tbody></table>
+<h3>POST /api/reviews/submit</h3>
+<pre><code>{
+  &quot;game_id&quot;: 5,
+  &quot;rating&quot;: 5,
+  &quot;comment&quot;: &quot;Excellent jeu !&quot;
+}</code></pre>
+<p><code>rating</code> : entier 1–5.</p>
+<h3>POST/PUT /api/developer/reviews/{id}/reply</h3>
+<pre><code>{
+  &quot;reply&quot;: &quot;Merci pour votre retour !&quot;
+}</code></pre>
+<p>Les avis sont <strong>publics en lecture</strong> (pas de filtre owner sur la collection). Édition/suppression réservées à l’auteur ou admin (via API Platform + voters).</p>
+<p>---</p>
+<h2>Signalements (reports)</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/reports/submit</code></td>
+<td>JWT</td>
+<td>Signaler un jeu</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/reports</code></td>
+<td>Admin/Mod</td>
+<td>Liste</td>
+</tr>
+<tr>
+<td>DELETE/POST</td>
+<td><code>/api/admin/reports/{id}</code></td>
+<td>Admin/Mod</td>
+<td>Rejeter / dismiss</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/reports/{id}/resolve</code></td>
+<td>Admin/Mod</td>
+<td>Marquer résolu</td>
+</tr>
+</tbody></table>
+<h3>POST /api/reports/submit</h3>
+<pre><code>{
+  &quot;game_id&quot;: 5,
+  &quot;reason&quot;: &quot;contenu_inapproprie&quot;,
+  &quot;details&quot;: &quot;Description libre&quot;
+}</code></pre>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

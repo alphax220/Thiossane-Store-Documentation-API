@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conventions — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="active" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Conventions &amp; erreurs</h1>
+<h2>Headers</h2>
+<pre><code>Content-Type: application/json
+Accept: application/json
+Authorization: Bearer &lt;access_token&gt;</code></pre>
+<p>Pour les uploads (avatar, cover, chunks) : <code>multipart/form-data</code> ou corps binaire selon l’endpoint (ne pas forcer <code>application/json</code>).</p>
+<p>Credentials (cookies refresh) : <code>credentials: &#x27;include&#x27;</code> en fetch.</p>
+<p>---</p>
+<h2>Codes HTTP</h2>
+<table><thead><tr>
+<th>Code</th>
+<th>Usage typique</th>
+</tr></thead><tbody>
+<tr>
+<td>200</td>
+<td>Succès lecture / action</td>
+</tr>
+<tr>
+<td>201</td>
+<td>Création</td>
+</tr>
+<tr>
+<td>204</td>
+<td>Succès sans corps (DELETE)</td>
+</tr>
+<tr>
+<td>400</td>
+<td>JSON invalide, méthode de paiement non supportée, validation métier simple</td>
+</tr>
+<tr>
+<td>401</td>
+<td>Non authentifié</td>
+</tr>
+<tr>
+<td>403</td>
+<td>Pas le droit (rôle / ownership)</td>
+</tr>
+<tr>
+<td>404</td>
+<td>Ressource absente ou non visible</td>
+</tr>
+<tr>
+<td>409</td>
+<td>Conflit (email déjà utilisé, etc.)</td>
+</tr>
+<tr>
+<td>422</td>
+<td>Erreurs de validation API Platform</td>
+</tr>
+<tr>
+<td>429</td>
+<td>Rate limit (ex. checkout) — respecter <code>Retry-After</code></td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Corps d’erreur</h2>
+<p>Format courant des contrôleurs custom :</p>
+<pre><code>{
+  &quot;message&quot;: &quot;Description lisible&quot;
+}</code></pre>
+<p>API Platform peut renvoyer un document d’erreur plus riche (violations, hydra).</p>
+<p>---</p>
+<h2>Pagination</h2>
+<p>Collections API Platform :</p>
+<ul>
+<li>Query : <code>page</code>, <code>itemsPerPage</code></li>
+<li>Réponse : liste + éventuellement métadonnées hydra (<code>hydra:totalItems</code>, <code>hydra:view</code>, …) selon le format negotié.</li>
+</ul>
+<p>Les listes custom (admin, account) peuvent paginer différemment (voir paramètres du contrôleur ou <code>Util/Pagination</code>).</p>
+<p>---</p>
+<h2>Sérialisation</h2>
+<p>Groupes typiques : <code>{ressource}:read</code>, <code>{ressource}:write</code>.</p>
+<p>Les champs sensibles (mot de passe, tokens, chemins fichiers internes) ne sont <strong>jamais</strong> dans un groupe <code>:read</code> exposé au client.</p>
+<p>Les champs que le client ne doit pas choisir (owner, status de modération, etc.) sont exclus de <code>:write</code> et fixés par des State Processors.</p>
+<p>---</p>
+<h2>Rate limiting</h2>
+<p>Le checkout est limité <strong>par utilisateur</strong>. En cas de 429, afficher un message et respecter le header <code>Retry-After</code>.</p>
+<p>D’autres limiteurs peuvent exister (login, uploads) selon <code>rate_limiter.yaml</code>.</p>
+<p>---</p>
+<h2>Visibilité des jeux</h2>
+<ul>
+<li>Public / user : uniquement <code>approved</code> (filtre <code>GameVisibilityExtension</code>).</li>
+<li>Développeur : ses propres jeux via <code>/api/developer/my-games</code> (tous statuts).</li>
+<li>Admin / modérateur : file <code>/api/admin/games/queue</code> + détail modération.</li>
+</ul>
+<p>---</p>
+<h2>Ownership</h2>
+<p>Pour les ressources privées listées (orders, payments, favorites, notifications…) :</p>
+<ul>
+<li>Collection filtrée automatiquement si l’entité implémente <code>ScopedToOwnerInterface</code>.</li>
+<li>Item : voter <code>OWNER_VIEW</code> / <code>OWNER_EDIT</code> + expressions <code>security</code> sur l’<code>ApiResource</code>.</li>
+</ul>
+<p>Les admins passent en général avec <code>is_granted(&#x27;ROLE_ADMIN&#x27;)</code> en tête des expressions.</p>
+<p>---</p>
+<h2>Paiements (rappel)</h2>
+<p>Méthodes <strong>désactivées</strong> tant que <code>$allowedMethods = []</code> dans <code>CheckoutController</code>.</p>
+<p>Ne pas promettre Wave / OM / YAS dans l’UI tant que le backend ne les réactive pas.</p>
+<p>---</p>
+<h2>Tracking public</h2>
+<p>Endpoints publics utiles côté marketing / analytics :</p>
+<ul>
+<li><code>POST /api/site-visits</code> — tracker une visite</li>
+<li><code>POST /api/share/{token}/click</code> — clic lien de partage</li>
+<li><code>POST /api/ambassador/{token}/click</code> — clic lien ambassadeur</li>
+</ul>
+<p>Pas de JWT requis ; ne pas y envoyer de données personnelles inutiles.</p>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

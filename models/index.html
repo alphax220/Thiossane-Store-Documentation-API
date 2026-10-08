@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modèles &amp; enums — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="active" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Modèles &amp; enums</h1>
+<h2>Enums</h2>
+<h3>GameStatus</h3>
+<table><thead><tr>
+<th>Valeur</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td><code>draft</code></td>
+<td>Brouillon développeur</td>
+</tr>
+<tr>
+<td><code>pending</code></td>
+<td>En attente de modération</td>
+</tr>
+<tr>
+<td><code>approved</code></td>
+<td>Publié / visible catalogue</td>
+</tr>
+<tr>
+<td><code>rejected</code></td>
+<td>Rejeté</td>
+</tr>
+<tr>
+<td><code>suspended</code></td>
+<td>Suspendu par la modération</td>
+</tr>
+</tbody></table>
+<h3>PaymentStatus</h3>
+<table><thead><tr>
+<th>Valeur</th>
+</tr></thead><tbody>
+<tr>
+<td><code>pending</code></td>
+</tr>
+<tr>
+<td><code>paid</code></td>
+</tr>
+<tr>
+<td><code>failed</code></td>
+</tr>
+<tr>
+<td><code>cancelled</code></td>
+</tr>
+<tr>
+<td><code>refunded</code></td>
+</tr>
+</tbody></table>
+<h3>Platform (GameVersion)</h3>
+<table><thead><tr>
+<th>Valeur</th>
+</tr></thead><tbody>
+<tr>
+<td><code>android</code></td>
+</tr>
+<tr>
+<td><code>ios</code></td>
+</tr>
+<tr>
+<td><code>windows</code></td>
+</tr>
+<tr>
+<td><code>web</code></td>
+</tr>
+</tbody></table>
+<h3>UserRole</h3>
+<table><thead><tr>
+<th>Valeur</th>
+<th>Rôle Symfony typique</th>
+</tr></thead><tbody>
+<tr>
+<td><code>user</code></td>
+<td><code>ROLE_USER</code></td>
+</tr>
+<tr>
+<td><code>developer</code></td>
+<td><code>ROLE_DEVELOPER</code></td>
+</tr>
+<tr>
+<td><code>moderator</code></td>
+<td><code>ROLE_MODERATOR</code></td>
+</tr>
+<tr>
+<td><code>admin</code></td>
+<td><code>ROLE_ADMIN</code></td>
+</tr>
+</tbody></table>
+<h3>UserStatus</h3>
+<table><thead><tr>
+<th>Valeur</th>
+</tr></thead><tbody>
+<tr>
+<td><code>active</code></td>
+</tr>
+<tr>
+<td><code>suspended</code></td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Entités principales</h2>
+<table><thead><tr>
+<th>Entité</th>
+<th>Rôle métier</th>
+</tr></thead><tbody>
+<tr>
+<td><code>User</code></td>
+<td>Compte (joueur, développeur ou admin)</td>
+</tr>
+<tr>
+<td><code>DeveloperProfile</code></td>
+<td>Fiche studio (nom, site, badge vérifié)</td>
+</tr>
+<tr>
+<td><code>Category</code></td>
+<td>Genre de jeu (public en lecture)</td>
+</tr>
+<tr>
+<td><code>Game</code></td>
+<td>Jeu + statut de modération</td>
+</tr>
+<tr>
+<td><code>GameVersion</code></td>
+<td>Binaire par plateforme (+ flag démo)</td>
+</tr>
+<tr>
+<td><code>Order</code> / <code>OrderItem</code></td>
+<td>Commande et lignes (prix figé à l’achat)</td>
+</tr>
+<tr>
+<td><code>Payment</code></td>
+<td>Tentative de paiement mobile money</td>
+</tr>
+<tr>
+<td><code>Download</code></td>
+<td>Log de téléchargement</td>
+</tr>
+<tr>
+<td><code>BrowserSession</code></td>
+<td>Session « jouer dans le navigateur »</td>
+</tr>
+<tr>
+<td><code>Review</code></td>
+<td>Avis (note 1–5 + commentaire), <strong>public</strong></td>
+</tr>
+<tr>
+<td><code>Favorite</code></td>
+<td>Favori utilisateur</td>
+</tr>
+<tr>
+<td><code>Report</code></td>
+<td>Signalement d’un jeu</td>
+</tr>
+<tr>
+<td><code>Promotion</code></td>
+<td>Promotion commerciale</td>
+</tr>
+<tr>
+<td><code>DeveloperCommissionPromo</code></td>
+<td>Promo de commission par développeur</td>
+</tr>
+<tr>
+<td><code>SystemSetting</code></td>
+<td>Réglages clé/valeur (admin)</td>
+</tr>
+<tr>
+<td><code>RefreshToken</code></td>
+<td>Support technique JWT refresh</td>
+</tr>
+<tr>
+<td><code>Notification</code></td>
+<td>Notification in-app</td>
+</tr>
+<tr>
+<td><code>AmbassadorLink</code> / <code>AmbassadorClick</code></td>
+<td>Liens ambassadeurs + clics</td>
+</tr>
+<tr>
+<td><code>ModerationActivity</code></td>
+<td>Historique d’actions de modération</td>
+</tr>
+<tr>
+<td><code>ShareLink</code> (si présent)</td>
+<td>Liens de partage trackés</td>
+</tr>
+<tr>
+<td><code>SiteVisit</code> (si présent)</td>
+<td>Tracking de visites</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Interfaces de sécurité</h2>
+<p>Deux interfaces dans <code>src/Entity/</code> gouvernent les ressources « privées » :</p>
+<h3>OwnableInterface</h3>
+<p><code>getOwner(): ?User</code> — « cette ressource appartient à cet utilisateur ».</p>
+<p>Utilisée par <code>OwnershipVoter</code> pour le droit de voir/modifier/supprimer <strong>cet</strong> élément.</p>
+<h3>ScopedToOwnerInterface extends OwnableInterface</h3>
+<p>+ <code>getOwnerPath(): string</code> — en plus, filtre la <strong>collection</strong> pour ne montrer que les ressources du user courant.</p>
+<p>Utilisée par <code>OwnershipCollectionExtension</code> sur les <code>GetCollection</code>.</p>
+<p><strong>Exemple important :</strong> <code>Review</code> n’implémente que <code>OwnableInterface</code> (pas <code>ScopedToOwnerInterface</code>) car la liste des avis doit rester publique — seule l’édition/suppression est réservée à l’auteur ou à un admin.</p>
+<p>---</p>
+<h2>Relations (schéma simplifié)</h2>
+<pre><code>User
+ ├──1:1── DeveloperProfile
+ ├──1:N── Game (owner)
+ │          ├──1:N── GameVersion
+ │          ├──1:N── Review
+ │          ├──1:N── Favorite
+ │          ├──1:N── Report
+ │          ├──1:N── Download
+ │          ├──1:N── BrowserSession
+ │          └──1:N── OrderItem
+ ├──1:N── Order ──1:N── OrderItem
+ │          └──1:N── Payment
+ ├──1:N── Download
+ ├──1:N── BrowserSession
+ ├──1:N── Review
+ ├──1:N── Favorite
+ ├──1:N── Report (reporter)
+ └──1:N── Notification</code></pre>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

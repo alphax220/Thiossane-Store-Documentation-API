@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accueil — Thiossane Store API</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="active" href="index.html">Accueil</a>
+<a class="" href="getting-started/index.html">Démarrage rapide</a>
+<a class="" href="auth/index.html">Authentification</a>
+<a class="" href="catalog/index.html">Catalogue</a>
+<a class="" href="account/index.html">Compte</a>
+<a class="" href="payments/index.html">Paiements</a>
+<a class="" href="play/index.html">Play / Download</a>
+<a class="" href="developer/index.html">Développeur</a>
+<a class="" href="admin/index.html">Admin</a>
+<a class="" href="support/index.html">Support</a>
+<a class="" href="notifications/index.html">Notifications</a>
+<a class="" href="models/index.html">Modèles &amp; enums</a>
+<a class="" href="conventions/index.html">Conventions</a>
+<a class="" href="routes.html">Index des routes</a>
+<a class="" href="architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    
+<h1>Thiossane Store — Documentation API</h1>
+<p class="meta">Mise à jour octobre 2026 — alignée sur le code backend actuel (<code>src/Controller/Api/*</code> + API Platform).</p>
+<p>Cette documentation décrit tous les endpoints du backend dont un développeur frontend a besoin pour brancher l’interface (catalogue, compte, paiements, espace développeur, admin, support, notifications).</p>
+
+<h2>Stack backend</h2>
+<table>
+<thead><tr><th>Élément</th><th>Détail</th></tr></thead>
+<tbody>
+<tr><td>Framework</td><td>Symfony + API Platform</td></tr>
+<tr><td>Auth</td><td>JWT (HS256) + refresh token (cookie HttpOnly et/ou body)</td></tr>
+<tr><td>Format</td><td>JSON uniquement (<code>Content-Type: application/json</code>)</td></tr>
+<tr><td>Préfixe API</td><td><code>/api</code></td></tr>
+<tr><td>CORS</td><td>Activé (credentials autorisés)</td></tr>
+</tbody>
+</table>
+
+<h2>Rôles</h2>
+<table>
+<thead><tr><th>Rôle</th><th>Valeur API</th><th>Accès typique</th></tr></thead>
+<tbody>
+<tr><td>Utilisateur</td><td><code>user</code></td><td>Catalogue, achat, compte, favoris, avis, support</td></tr>
+<tr><td>Développeur</td><td><code>developer</code></td><td>+ publication de jeux, stats, uploads, ambassadeurs</td></tr>
+<tr><td>Modérateur</td><td><code>moderator</code></td><td>+ file de modération, signalements</td></tr>
+<tr><td>Admin</td><td><code>admin</code></td><td>Tout + utilisateurs, finances, infrastructure</td></tr>
+</tbody>
+</table>
+<p>Hiérarchie : <code>ROLE_ADMIN</code> ⊃ <code>ROLE_MODERATOR</code> / <code>ROLE_DEVELOPER</code> ⊃ <code>ROLE_USER</code>.</p>
+
+<div class="alert warning">
+  <strong>Paiements temporairement désactivés</strong>
+  Les méthodes Wave, Orange Money et YAS sont désactivées côté backend (<code>$allowedMethods = []</code>). Les endpoints checkout existent encore mais rejettent toute méthode. Prévoir l’UI « bientôt disponible » côté front.
+</div>
+
+<h2>Navigation rapide</h2>
+<div class="cards">
+  <a class="card" href="getting-started/index.html"><h3>Démarrage rapide</h3><p>Base URL, headers, auth, erreurs</p></a>
+  <a class="card" href="auth/index.html"><h3>Authentification</h3><p>Register, login, refresh, /api/me</p></a>
+  <a class="card" href="catalog/index.html"><h3>Catalogue</h3><p>Jeux, catégories, promotions, avis</p></a>
+  <a class="card" href="account/index.html"><h3>Compte</h3><p>Profil, avatar, commandes, favoris</p></a>
+  <a class="card" href="payments/index.html"><h3>Paiements</h3><p>Checkout, statut, webhooks</p></a>
+  <a class="card" href="play/index.html"><h3>Play / Download</h3><p>Ownership, liens signés, sessions</p></a>
+  <a class="card" href="developer/index.html"><h3>Développeur</h3><p>Studio, uploads, stats, ambassadeurs</p></a>
+  <a class="card" href="admin/index.html"><h3>Admin</h3><p>Users, modération, finances, infra</p></a>
+  <a class="card" href="support/index.html"><h3>Support</h3><p>Tickets utilisateur &amp; admin</p></a>
+  <a class="card" href="notifications/index.html"><h3>Notifications</h3><p>Liste, unread, mark read</p></a>
+  <a class="card" href="models/index.html"><h3>Modèles &amp; enums</h3><p>Entités, enums, interfaces sécurité</p></a>
+  <a class="card" href="conventions/index.html"><h3>Conventions</h3><p>Erreurs, pagination, bonnes pratiques</p></a>
+  <a class="card" href="routes.html"><h3>Index des routes</h3><p>134 routes custom extraites du code</p></a>
+  <a class="card" href="architecture/index.html"><h3>Architecture</h3><p>Vue d’ensemble technique backend</p></a>
+</div>
+
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

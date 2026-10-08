@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Développeur — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="" href="../play/index.html">Play / Download</a>
+<a class="active" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Espace développeur</h1>
+<p>JWT avec rôle <strong>developer</strong> (ou admin).</p>
+<h2>Profil studio</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/me/developer-profile</code></td>
+<td>Profil studio courant</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td><code>/api/me/developer-profile</code></td>
+<td>Mettre à jour (nom, site, etc.)</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Mes jeux</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/my-games</code></td>
+<td>Liste des jeux du développeur</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/developer/games/{id}/resubmit</code></td>
+<td>Resoumettre après rejet</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/developer/games/{id}/cover</code></td>
+<td>Upload couverture</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/developer/games/{id}/presentation-images</code></td>
+<td>Upload images de présentation</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/developer/games/{id}</code></td>
+<td>Supprimer mon jeu</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/games</code></td>
+<td>Créer un jeu (API Platform, security developer)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/games/{id}</code></td>
+<td>Modifier (si propriétaire / droits)</td>
+</tr>
+</tbody></table>
+<p>Cycle de vie : <code>draft</code> → <code>pending</code> → <code>approved</code> / <code>rejected</code> (→ éventuel resubmit) / <code>suspended</code>.</p>
+<p>Création et mise à jour passent par des <strong>State Processors</strong> (<code>GameCreateProcessor</code>, <code>GameUpdateProcessor</code>) qui forcent le statut et le propriétaire côté serveur.</p>
+<p>---</p>
+<h2>Versions &amp; uploads (resumable)</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET/OPTIONS</td>
+<td><code>/api/developer/uploads/limits</code></td>
+<td>Limites (taille, types)</td>
+</tr>
+<tr>
+<td>POST/OPTIONS</td>
+<td><code>/api/developer/uploads/init</code></td>
+<td>Initier un upload resumable</td>
+</tr>
+<tr>
+<td>GET/OPTIONS</td>
+<td><code>/api/developer/uploads/{uuid}</code></td>
+<td>Statut de l’upload</td>
+</tr>
+<tr>
+<td>PUT/POST/OPTIONS</td>
+<td><code>/api/developer/uploads/{uuid}/chunk</code></td>
+<td>Envoyer un chunk</td>
+</tr>
+<tr>
+<td>POST/OPTIONS</td>
+<td><code>/api/developer/uploads/{uuid}/complete</code></td>
+<td>Finaliser l’upload</td>
+</tr>
+</tbody></table>
+<p>Utilisé pour les binaires de <code>GameVersion</code> (plateformes : <code>android</code>, <code>ios</code>, <code>windows</code>, <code>web</code>).</p>
+<p>Endpoints API Platform <code>GameVersion</code> existent aussi pour le CRUD métadonnées (sécurité via voters).</p>
+<p>---</p>
+<h2>Avis &amp; réponses</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/reviews</code></td>
+<td>Avis sur mes jeux</td>
+</tr>
+<tr>
+<td>POST/PUT</td>
+<td><code>/api/developer/reviews/{id}/reply</code></td>
+<td>Répondre</td>
+</tr>
+</tbody></table>
+<pre><code>{ &quot;reply&quot;: &quot;Merci pour votre retour !&quot; }</code></pre>
+<p>---</p>
+<h2>Commission</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/commission-rate</code></td>
+<td>Taux de commission applicable</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Stats</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/platform-stats</code></td>
+<td>Stats plateforme (dev)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/play-stats</code></td>
+<td>Stats de play</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/share-stats</code></td>
+<td>Stats des liens de partage</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/ambassador-stats</code></td>
+<td>Stats ambassadeurs</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Liens de partage</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/developer/games/{id}/share-link</code></td>
+<td>Créer / récupérer un lien de partage</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/share-stats</code></td>
+<td>Statistiques de partage</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/share/{token}/click</code></td>
+<td>Enregistrer un clic (public)</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Liens ambassadeurs</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/developer/games/{id}/ambassador-links</code></td>
+<td>Créer un lien ambassadeur</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/ambassador-links</code></td>
+<td>Lister mes liens</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/developer/ambassador-links/{id}/revoke</code></td>
+<td>Révoquer</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/ambassador-stats</code></td>
+<td>Stats</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/ambassador/{token}/click</code></td>
+<td>Enregistrer un clic (public)</td>
+</tr>
+</tbody></table>
+<p>---</p>
+<h2>Marketing analytics</h2>
+<p>Préfixe : <code>/api/developer/marketing</code></p>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/marketing/analytics</code></td>
+<td>Analytics marketing du développeur</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/marketing/campaigns</code></td>
+<td>Campagnes</td>
+</tr>
+</tbody></table>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>

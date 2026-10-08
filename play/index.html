@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Play / Download — Thiossane Store API</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html">Thiossane Store API</a>
+      <span>Documentation Frontend · oct. 2026</span>
+    </div>
+    <nav>
+      <a class="" href="../index.html">Accueil</a>
+<a class="" href="../getting-started/index.html">Démarrage rapide</a>
+<a class="" href="../auth/index.html">Authentification</a>
+<a class="" href="../catalog/index.html">Catalogue</a>
+<a class="" href="../account/index.html">Compte</a>
+<a class="" href="../payments/index.html">Paiements</a>
+<a class="active" href="../play/index.html">Play / Download</a>
+<a class="" href="../developer/index.html">Développeur</a>
+<a class="" href="../admin/index.html">Admin</a>
+<a class="" href="../support/index.html">Support</a>
+<a class="" href="../notifications/index.html">Notifications</a>
+<a class="" href="../models/index.html">Modèles &amp; enums</a>
+<a class="" href="../conventions/index.html">Conventions</a>
+<a class="" href="../routes.html">Index des routes</a>
+<a class="" href="../architecture/index.html">Architecture</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Téléchargements &amp; jeu navigateur</h1>
+<h2>Propriété &amp; téléchargement</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/ownership</code></td>
+<td>JWT</td>
+<td>L’utilisateur possède-t-il le jeu ?</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/download</code></td>
+<td>JWT</td>
+<td>Génère un lien de téléchargement signé</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/games/downloads/deliver</code></td>
+<td>Public*</td>
+<td>Délivre le fichier (token signé en query)</td>
+</tr>
+</tbody></table>
+<p>\* Public mais protégé par signature à durée limitée (<code>DownloadLinkSigner</code>).</p>
+<h3>GET /api/games/{id}/ownership</h3>
+<pre><code>{
+  &quot;owned&quot;: true,
+  &quot;game_id&quot;: 5
+}</code></pre>
+<h3>GET /api/games/{id}/download</h3>
+<p>Prérequis : authentifié + (achat payé ou jeu gratuit) + version disponible.</p>
+<p><strong>Réponse typique :</strong></p>
+<pre><code>{
+  &quot;download_url&quot;: &quot;https://api.../api/games/downloads/deliver?token=...&quot;,
+  &quot;expires_at&quot;: &quot;2026-09-22T13:00:00+00:00&quot;,
+  &quot;filename&quot;: &quot;mon-jeu-v1.2.zip&quot;
+}</code></pre>
+<p>Le front ouvre <code>download_url</code> (ou le propose à l’utilisateur).</p>
+<h3>Liste des téléchargements du compte</h3>
+<p><code>GET /api/account/downloads</code> — voir <a href="../account/index.html">Compte</a>.</p>
+<p>---</p>
+<h2>Jeu dans le navigateur (play)</h2>
+<table><thead><tr>
+<th>Méthode</th>
+<th>Endpoint</th>
+<th>Auth</th>
+<th>Description</th>
+</tr></thead><tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/games/{id}/play-info</code></td>
+<td>Public*</td>
+<td>Infos pour lancer le play (si <code>playInBrowser</code>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/play-assets/...</code></td>
+<td>Public*</td>
+<td>Assets de jeu (chemins protégés / signés)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/browser-sessions/start</code></td>
+<td>JWT</td>
+<td>Démarre une session de jeu</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/browser-sessions/{id}/heartbeat</code></td>
+<td>JWT</td>
+<td>Heartbeat (maintien session)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/browser-sessions/{id}/end</code></td>
+<td>JWT</td>
+<td>Termine la session</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/developer/play-stats</code></td>
+<td>Dev</td>
+<td>Stats de play du développeur</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/play-stats</code></td>
+<td>Admin</td>
+<td>Stats globales</td>
+</tr>
+</tbody></table>
+<p>\* Accessible selon <code>security.yaml</code> ; le contenu peut rester restreint (démo / achat).</p>
+<h3>POST /api/browser-sessions/start</h3>
+<pre><code>{
+  &quot;game_id&quot;: 5
+}</code></pre>
+<p>Réponse : id de session, timestamps, etc.</p>
+<h3>POST /api/browser-sessions/{id}/heartbeat</h3>
+<p>Maintient la session active (évite l’expiration côté stats).</p>
+<h3>POST /api/browser-sessions/{id}/end</h3>
+<p>Clôture la session (durée de jeu pour les statistiques).</p>
+  </main>
+  <script>
+    // close sidebar on nav click (mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.remove('open');
+    }));
+  </script>
+</body>
+</html>
